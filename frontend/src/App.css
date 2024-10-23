@@ -36,3 +36,33 @@
     transform: rotate(360deg);
   }
 }
+
+.navlink {
+  text-decoration: none;
+  color: #175383;
+  position: relative; 
+  display: inline-block; 
+}
+
+.navlink:after {
+  content: '';
+  display: block;
+  width: 0; 
+  height: 3px; /* thickness of the underline */
+  background: white;  /* color of underline */
+  position: absolute;
+  left: 50%; /* start from the center */
+  bottom: -5px; 
+  border-radius: 5px;
+  transform: translateX(-50%); /* center the underline */
+  transition: width 0.5s ease; 
+  visibility: hidden;
+}
+
+.navlink:hover:after,
+.navlink.active:after {
+  width: 120%; 
+  visibility: visible;
+  
+}
+
