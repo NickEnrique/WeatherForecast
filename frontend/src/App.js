@@ -47,7 +47,6 @@ class ErrorBoundary extends React.Component {
 }
 
 function App() {
-
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const toggleDrawer = (open) => () => {
@@ -134,12 +133,12 @@ const Home = () => {
     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam sagittis, quam et volutpat sollicitudin, lacus lectus blandit odio, sit amet mollis tortor nunc ac leo. Integer at varius ipsum.
   </Typography>
 </Box>
-    <Box sx={{ padding: 2 }}>
+    <Box sx={{ pt: 2 }}>
     <Typography variant="h5" sx={{textAlign:'center', m:1, fontweight:'bold'}}>Meet the Team</Typography>
     <Grid container justifyContent="space-evenly" sx={{m:2}}>
         {/* Each card takes full width on small screens and 4/12 on medium and larger */}
-        <Grid item sm={12} md={4}>
-          <Card sx={{ width:'250px', height: '100%', display: 'flex', flexDirection: 'column',border:'2px solid #c1dff6' }}>
+        <Grid item xs={12} md={4}  sx={{mb:4}}>
+          <Card sx={{ width:'230px', height: '100%', display: 'flex', flexDirection: 'column',border:'2px solid #c1dff6' }}>
             <CardContent sx={{ flex: 1 }}>
               <Typography variant="subtitle1" sx={{textAlign:'center'}}>Levin Fubex</Typography>
               <Divider/>
@@ -150,14 +149,17 @@ const Home = () => {
                 <span style={{ fontWeight: 'bold' }}>Degree:</span> 
               </Typography>
               <Typography variant="subtitle2">
+                <span style={{ fontWeight: 'bold' }}>Major:</span> 
+              </Typography>
+              <Typography variant="subtitle2">
                 <span style={{ fontWeight: 'bold' }}>Task:</span> 
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item sm={12} md={4}>
-        <Card sx={{ width:'250px', height: '100%', display: 'flex', flexDirection: 'column',border:'2px solid #c1dff6' }}>
+        <Grid item xs={12} md={4}  sx={{mb:4}}>
+        <Card sx={{width:'230px', height: '100%', display: 'flex', flexDirection: 'column',border:'2px solid #c1dff6' }}>
             <CardContent sx={{ flex: 1 }}>
               <Typography variant="subtitle1" sx={{textAlign:'center'}}>Muy Houng Leang</Typography>
               <Divider/>
@@ -165,17 +167,20 @@ const Home = () => {
                 <span style={{ fontWeight: 'bold' }}>Student ID:</span> 104356422
               </Typography>
               <Typography variant="subtitle2">
-                <span style={{ fontWeight: 'bold' }}>Degree:</span> Software Development
+                <span style={{ fontWeight: 'bold' }}>Degree:</span> BA-CS
               </Typography>
               <Typography variant="subtitle2">
-                <span style={{ fontWeight: 'bold' }}>Task:</span> Front-end Development
+                <span style={{ fontWeight: 'bold' }}>Major:</span> Software Development and Cybersecurity
+              </Typography>
+              <Typography variant="subtitle2">
+                <span style={{ fontWeight: 'bold' }}>Task:</span> Frontend Development
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item sm={12} md={4}>
-        <Card sx={{ width:'250px', height: '100%', display: 'flex', flexDirection: 'column',border:'2px solid #c1dff6' }}>
+        <Grid item xs={12} md={4} sx={{mb:4}} >
+        <Card sx={{ width:'230px', height: '100%', display: 'flex', flexDirection: 'column',border:'2px solid #c1dff6' }}>
             <CardContent sx={{ flex: 1 }}>
               <Typography variant="subtitle1" sx={{textAlign:'center'}}>Nick Enrique Wijaya</Typography>
               <Divider/>
@@ -184,6 +189,9 @@ const Home = () => {
               </Typography>
               <Typography variant="subtitle2">
                 <span style={{ fontWeight: 'bold' }}>Degree:</span> 
+              </Typography>
+              <Typography variant="subtitle2">
+                <span style={{ fontWeight: 'bold' }}>Major:</span> 
               </Typography>
               <Typography variant="subtitle2">
                 <span style={{ fontWeight: 'bold' }}>Task:</span> 
@@ -207,7 +215,7 @@ return (
         <MenuIcon />
       </IconButton>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flexGrow: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, textTransform: "uppercase", color: '#175383' }}>
+        <Typography sx={{ fontWeight: 600, textTransform: "uppercase", color: '#175383', fontSize:{xs:'0.9rem',md:'1.2rem'} }}>
           Weather Analysis
         </Typography>
         <SunIcon sx={{ ml: 1, color: 'yellow' }} />
@@ -216,22 +224,20 @@ return (
   </AppBar>
 
   {/* Second AppBar below the first one */}
-  <AppBar position="static" sx={{bgcolor:"#c1dff6"}}>
+  {/*Only appears for sm screens and above */}
+  <AppBar position="static" sx={{bgcolor:"#c1dff6", display:{xs:'none', sm:'block'}}}>
     <Toolbar sx={{justifyContent: "space-evenly"}}>
     <NavLink to="/" className="navlink">
-      <Typography sx={{fontWeight:'bold'}}
-        >Home
-      </Typography>
+      <Typography sx={{fontWeight:'bold',fontSize:{sm:'0.9rem',md:'1rem'},}}>Home</Typography>
     </NavLink>
-
       <NavLink to="/prediction"  className="navlink">
-        <Typography sx={{fontWeight:"bold" }}>Temperature Prediction</Typography>
+        <Typography sx={{fontWeight:"bold" ,fontSize:{sm:'0.9rem',md:'1rem'}}}>Temperature Prediction</Typography>
       </NavLink>
       <NavLink to="/classification"  className="navlink">
-        <Typography sx={{fontWeight:"bold" }}>Weather Classification</Typography>
+        <Typography sx={{fontWeight:"bold" ,fontSize:{sm:'0.9rem',md:'1rem'}}}>Weather Classification</Typography>
       </NavLink>
       <NavLink to="/anomaly"className="navlink"> 
-        <Typography sx={{fontWeight:"bold" }}>Anomaly Detection</Typography>
+        <Typography sx={{fontWeight:"bold" ,fontSize:{sm:'0.9rem',md:'1rem'}}}>Anomaly Detection</Typography>
       </NavLink>
     </Toolbar>
   </AppBar>
@@ -243,19 +249,19 @@ return (
   <Box sx={{ flexGrow: 1, minHeight: 0 }}>
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/prediction" element={<Box sx={{ m: 3 }}><Prediction /></Box>} />
-      <Route path="/classification" element={<Box sx={{ m: 3 }}><Classification /></Box>} />
-      <Route path="/anomaly" element={<Box sx={{ m: 3 }}><Anomaly /></Box>} />
+      <Route path="/prediction" element={<Prediction/>} />
+      <Route path="/classification" element={<Classification />}/>
+      <Route path="/anomaly" element={<Anomaly />} />
     </Routes>
   </Box>
 
   {/* Footer */}
   <Box sx={{ p: 2, bgcolor: "#6dbcf0" }}>
-    <Typography sx={{ fontWeight: 600, textAlign: "center", color: "#175383" }}>Team 8 - Innovation</Typography>
-    <Typography sx={{ textAlign: 'center', marginTop: 1 }}>
+    <Typography sx={{ fontWeight: 600, textAlign: "center", color: "#175383",fontSize:{xs:'0.9rem',md:'1rem'} }}>Team 8 - Innovation</Typography>
+    <Typography sx={{ textAlign: 'center', marginTop: 1 ,fontSize:{xs:'0.8rem',md:'1rem'}}}>
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam sagittis, quam et volutpat sollicitudin, lacus lectus blandit odio, sit amet mollis tortor nunc ac leo. Integer at varius ipsum.
     </Typography>
-    <Typography sx={{ fontSize: 12, textAlign: 'center', mt: 1, color: '#175383' }}>
+    <Typography sx={{ fontSize:{xs:10,md:12}, textAlign: 'center', mt: 1, color: '#175383' }}>
       © 2024 Team 8 Innovation. All rights reserved.
     </Typography>
   </Box>

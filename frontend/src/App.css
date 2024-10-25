@@ -61,7 +61,7 @@
 
 .navlink:hover:after,
 .navlink.active:after {
-  width: 120%; 
+  width: 110%; 
   visibility: visible;
   
 }
