@@ -43,17 +43,13 @@ def load_classification_model():
 
 
 def classify_weather(clf, label_encoder, accuracy, min_temp, max_temp, humidity, windspeed, uv, season, anomaly_score):
-    # Define feature names
-    min_feature_names = ['MinTemp', 'Humidity', 'WindSpeed', 'UV', 'Season']
-    max_feature_names = ['MaxTemp', 'Humidity', 'WindSpeed', 'UV', 'Season']
-
     # Prepare input for predictions
-    night_input = pd.DataFrame([[min_temp, humidity, windspeed, uv, season]], columns=min_feature_names)
-    day_input = pd.DataFrame([[max_temp, humidity, windspeed, uv, season]], columns=max_feature_names)
+    night_input = [[min_temp, humidity, windspeed, uv, season]]
+    day_input = [[max_temp, humidity, windspeed, uv, season]]
 
     # Encode the 'Season' feature in the input data
-    night_input['Season'] = label_encoder.transform(night_input['Season'])
-    day_input['Season'] = label_encoder.transform(day_input['Season'])
+    night_input[0][4] = label_encoder.transform([night_input[0][4]])[0]
+    day_input[0][4] = label_encoder.transform([day_input[0][4]])[0]
 
     # Make predictions
     night_forecast = clf.predict(night_input)
@@ -73,4 +69,3 @@ def classify_weather(clf, label_encoder, accuracy, min_temp, max_temp, humidity,
         'day_forecast': day_forecast[0],
         'day_reliability': day_reliability
     }
-
