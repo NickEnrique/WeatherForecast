@@ -2,7 +2,6 @@ import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 import joblib
-import os
 
 def train_isolation_forest(city_code):
     # Load data and filter by city code
