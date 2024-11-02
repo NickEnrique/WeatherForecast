@@ -74,7 +74,7 @@ export default function Classification() {
         setError("Failed to get prediction data");
       }
     } catch (err) {
-      setError("Error detecting anomalies. Please try again.");
+      setError("Error with classifying weather. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
