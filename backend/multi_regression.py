@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 import joblib
 import os
 
+# MultiOutput Regression Model Training Function
 def train_regression_model():
     # Load data from a CSV file
     df = pd.read_csv('dataset/combined_weather_data.csv')
@@ -39,9 +40,11 @@ def train_regression_model():
     joblib.dump(regr, 'models/multi_regression_model.joblib')
     return regr
 
+# Load existing model if exists, else train the model
 def load_regression_model():
     return joblib.load('models/multi_regression_model.joblib') if os.path.exists('models/multi_regression_model.joblib') else train_regression_model()
 
+# MultiOutput Regression Model Predictor Function
 def regression_date_predict(date, city_code, model):
     # Extracting date-related features from the input
     date = pd.to_datetime(date)

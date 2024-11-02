@@ -5,6 +5,7 @@ from sklearn.metrics import accuracy_score
 import joblib
 import os
 
+# Random Forest Classification Model Training Function
 def train_classification_model():
     # Load the training data
     train_data = pd.read_csv('dataset/train_weather_data.csv', delimiter=';')
@@ -33,6 +34,7 @@ def train_classification_model():
     joblib.dump(accuracy, 'models/accuracy.joblib')
     return clf, label_encoder, accuracy
 
+# Load existing model if exists, else train the model
 def load_classification_model():
     clf_path, encoder_path, accuracy_path = 'models/classification_model.joblib', 'models/label_encoder.joblib', 'models/accuracy.joblib'
     if os.path.exists(clf_path) and os.path.exists(encoder_path) and os.path.exists(accuracy_path):
@@ -41,7 +43,7 @@ def load_classification_model():
     else:
         return train_classification_model()
 
-
+# Random Forest Classification Model Predictor Function
 def classify_weather(clf, label_encoder, accuracy, min_temp, max_temp, humidity, windspeed, uv, season, anomaly_score):
     # Prepare input for predictions
     night_input = [[min_temp, humidity, windspeed, uv, season]]

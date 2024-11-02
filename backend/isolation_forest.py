@@ -3,6 +3,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 import joblib
 
+# Isolation Forest Training Function
 def train_isolation_forest(city_code):
     # Load data and filter by city code
     df = pd.read_csv('dataset/combined_weather_data.csv')
@@ -34,6 +35,7 @@ def train_isolation_forest(city_code):
     joblib.dump(isolation_model, f'models/{city_code}_isolation_forest_model.joblib')
     joblib.dump(scaler, f'models/{city_code}_scaler.joblib')
 
+# Isolation Forest Predictor Function
 def detect_anomaly(weather_data, city_code):
     try:
         model = joblib.load(f'models/{city_code}_isolation_forest_model.joblib')

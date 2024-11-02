@@ -54,11 +54,14 @@ def get_season(date_str):
 print("Training multi-regression model")
 multiregression_model = load_regression_model()
 print("Multi-regression model training complete")
+
 print("Training isolation forest models")
 train_isolation()
+
 print("Training classification model")
 clf, label_encoder, accuracy = load_classification_model()
 print("Classification model training completed")
+
 print("Training Minimum and Maximum Temperature regression model")
 minmax_model = load_minmax_model()
 print("Minimum and Maximum Temperature regression model training completed")
@@ -88,16 +91,20 @@ class ClassificationRequest(BaseModel):
     city_code: str
     date: str
 
-# Endpoints
+# API Endpoint to Predict Min and Max Temperature using the MultiOutput Regression Model
 @app.post("/predict_minmax")
 async def predict_minmax(req: MinMaxRequest):
     try:
+        # Setting the input date as well as the dates for the date range
         target_date = datetime.strptime(req.date, '%Y-%m-%d')
         dates_range = [target_date + timedelta(days=i) for i in range(-5, 6)]
         predictions = {}
 
+        # Loop through each date in the range specified to get regression output for each date
         for day in dates_range:
             day_str = day.strftime('%Y-%m-%d')
+
+            # Using the MinMax Regression Model
             prediction = minmax_predict(day_str, req.city_code, req.rainfall, req.humidity, req.pressure, req.wind_gust_speed, req.uv_index, minmax_model)
             predictions[day_str] = prediction
 
@@ -105,13 +112,16 @@ async def predict_minmax(req: MinMaxRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# API Endpoint to Predict Anomalies using the Isolation Forest Model
 @app.post("/predict_anomaly")
 async def predict_anomaly(req: AnomalyRequest):
     try:
+        # Setting the input date as well as the dates for the date range
         target_date = datetime.strptime(req.date, '%Y-%m-%d')
         dates_range = [target_date + timedelta(days=i) for i in range(-5, 6)]
         anomalies = {}
 
+        # Loop through each date in the range specified to get anomaly output for each date
         for day in dates_range:
             day_str = day.strftime('%Y-%m-%d')
             weather_data = {
@@ -124,25 +134,39 @@ async def predict_anomaly(req: AnomalyRequest):
                 'Pressure': req.pressure,
                 'UVIEF': req.uv_index
             }
+
+            # Using the anomaly prediction model
             anomaly = detect_anomaly(weather_data, req.city_code)
+
+            # Retrieving the anomaly result
             anomalies[day_str] = {"anomaly": "Yes" if anomaly['anomaly_label'] < 0 else "No", "score": anomaly['anomaly_score']}
         
         return {"status": "success", "data": anomalies}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# API Endpoint to Classify Weather using the Random Forest Classification Model
 @app.post("/classification_predict")
 async def classification_predict(req: ClassificationRequest):
     try:
+        # Setting the input date as well as the dates for the date range
         target_date = datetime.strptime(req.date, '%Y-%m-%d')
         dates_range = [target_date + timedelta(days=i) for i in range(-5, 6)]
         classifications = {}
 
+        # Loop through each date in the range specified to get classification output for each date
         for day in dates_range:
             day_str = day.strftime('%Y-%m-%d')
+
+            # Getting the variables data based on the date using the multi-output regression model
             prediction = regression_date_predict(day_str, req.city_code, multiregression_model)
+
+            # Using the output of the regression model to determine if there is an anomaly
             anomaly = detect_anomaly(prediction, req.city_code)
-            season = get_season(day_str)
+
+            season = get_season(day_str)        # Getting the season of the date used for input
+
+            # Using the classification model predictor using the output of the regression model and the anomaly score
             classification = classify_weather(
                 clf, label_encoder, accuracy,
                 min_temp=prediction['MinTemp'],

@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 import joblib
 import os
 
+# MinMax Temp Regression Training Function
 def train_minmax_model():
     # Load data from a CSV file
     df = pd.read_csv('dataset/combined_weather_data.csv')
@@ -39,9 +40,11 @@ def train_minmax_model():
     joblib.dump(regr, 'models/minmax_model.joblib')
     return regr
 
+# Load existing model if exists, else train the model
 def load_minmax_model():
     return joblib.load('models/minmax_model.joblib') if os.path.exists('models/minmax_model.joblib') else train_minmax_model()
 
+# MinMax Temp Regression Predictor Function
 def minmax_predict(date, city_code, rainfall, humidity, pressure, wind_gust_speed, uv_index, model):
     # Extracting date-related features from the input
     date = pd.to_datetime(date)
