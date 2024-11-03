@@ -17,63 +17,131 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import * as d3 from "d3";
 
-function ResultsChart({ chartData, mainDate }) {
+function ResultsChart({ chartData, chartData2, mainDate }) {
   const svgRef = useRef();
   const tooltipRef = useRef();
+  const containerRef = useRef();
+  const [containerWidth, setContainerWidth] = useState(600); // Default width
+
+  // Resize observer to make chart responsive
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (entries[0].contentRect) {
+        setContainerWidth(entries[0].contentRect.width);
+      }
+    });
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+    return () => resizeObserver.disconnect();
+  }, []);
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove(); // Clear previous elements
+    svg.selectAll("*").remove();
 
-    const width = 600,
-      height = 400;
-    const margin = { top: 20, right: 30, bottom: 30, left: 40 };
+    const width = containerWidth;
+    const height = 400;
+    const margin = { top: 40, right: 30, bottom: 50, left: 40 };
 
-    // Set up scales
+    // Chart title
+    svg
+      .append("text")
+      .attr("x", width / 2)
+      .attr("y", margin.top - 10)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "16px")
+      .attr("font-weight", "bold")
+      .text("Temperature Forecast");
+
+    // Set up scales to cover the extent of both datasets
+    const combinedData = [...chartData, ...chartData2];
     const xScale = d3
       .scaleTime()
-      .domain(d3.extent(chartData, (d) => d.date))
+      .domain(d3.extent(combinedData, (d) => d.date))
       .range([margin.left, width - margin.right]);
 
     const yScale = d3
       .scaleLinear()
       .domain([
-        d3.min(chartData, (d) => d.minTemp),
-        d3.max(chartData, (d) => d.maxTemp),
+        d3.min(combinedData, (d) => d.minTemp),
+        d3.max(combinedData, (d) => d.maxTemp),
       ])
       .nice()
       .range([height - margin.bottom, margin.top]);
 
-    // Line generators
-    const minTempLine = d3
-      .line()
-      .x((d) => xScale(d.date))
-      .y((d) => yScale(d.minTemp));
+    // Define colors
+    const colorScale = d3.scaleOrdinal().range(["steelblue", "orange"]);
 
-    const maxTempLine = d3
-      .line()
-      .x((d) => xScale(d.date))
-      .y((d) => yScale(d.maxTemp));
+    // Line generators for minTemp and maxTemp of `chartData`
+    const lineMinTemp1 = d3.line().x((d) => xScale(d.date)).y((d) => yScale(d.minTemp));
+    const lineMaxTemp1 = d3.line().x((d) => xScale(d.date)).y((d) => yScale(d.maxTemp));
 
-    // Draw minTemp line
+    // Line generators for minTemp and maxTemp of `chartData2`
+    const lineMinTemp2 = d3.line().x((d) => xScale(d.date)).y((d) => yScale(d.minTemp));
+    const lineMaxTemp2 = d3.line().x((d) => xScale(d.date)).y((d) => yScale(d.maxTemp));
+
+    // Draw lines for `chartData`
     svg
       .append("path")
       .datum(chartData)
       .attr("fill", "none")
-      .attr("stroke", "steelblue")
+      .attr("stroke", colorScale(0))
       .attr("stroke-width", 1.5)
-      .attr("d", minTempLine);
+      .attr("d", lineMinTemp1);
 
-    // Draw maxTemp line
     svg
       .append("path")
       .datum(chartData)
       .attr("fill", "none")
-      .attr("stroke", "orange")
+      .attr("stroke", colorScale(0))
       .attr("stroke-width", 1.5)
-      .attr("d", maxTempLine);
+      .attr("d", lineMaxTemp1)
+      .style("stroke-dasharray", "5,5"); // Optional: dashed for maxTemp
 
-    // Add tooltip
+    // Draw lines for `chartData2`
+    svg
+      .append("path")
+      .datum(chartData2)
+      .attr("fill", "none")
+      .attr("stroke", colorScale(1))
+      .attr("stroke-width", 1.5)
+      .attr("d", lineMinTemp2);
+
+    svg
+      .append("path")
+      .datum(chartData2)
+      .attr("fill", "none")
+      .attr("stroke", colorScale(1))
+      .attr("stroke-width", 1.5)
+      .attr("d", lineMaxTemp2)
+      .style("stroke-dasharray", "5,5");
+
+    // Add axes
+    svg
+      .append("g")
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y-%m-%d")))
+      .append("text")
+      .attr("x", width / 2)
+      .attr("y", 40)
+      .attr("fill", "black")
+      .attr("text-anchor", "middle")
+      .text("Date");
+
+    svg
+      .append("g")
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(yScale))
+      .append("text")
+      .attr("x", -height / 2)
+      .attr("y", -30)
+      .attr("fill", "black")
+      .attr("text-anchor", "middle")
+      .attr("transform", "rotate(-90)")
+      .text("Temperature (°C)");
+
+    // Tooltip for hover
     const tooltip = d3
       .select(tooltipRef.current)
       .style("position", "absolute")
@@ -83,71 +151,84 @@ function ResultsChart({ chartData, mainDate }) {
       .style("pointer-events", "none")
       .style("opacity", 0);
 
-    // Circles for each data point with hover interactivity
-    svg
-      .selectAll(".data-point")
-      .data(chartData)
-      .enter()
-      .append("circle")
-      .attr("class", "data-point")
-      .attr("cx", (d) => xScale(d.date))
-      .attr("cy", (d) => yScale(d.maxTemp))
-      .attr("r", 5)
-      .attr("fill", "orange")
-      .on("mouseover", function (event, d) {
-        const [offsetX, offsetY] = d3.pointer(event); // Get relative coordinates within the SVG
-
-        tooltip
-          .style("opacity", 1)
-          .html(
-            `<strong>Date:</strong> ${d.date.toDateString()}<br>
-                   <strong>Min Temp:</strong> ${d.minTemp}°C<br>
-                   <strong>Max Temp:</strong> ${d.maxTemp}°C`
-          )
-          .style("left", `${offsetX + 10}px`) // Position near the point
-          .style("top", `${offsetY - 30}px`); // Slightly above the point
-
-        d3.select(this).attr("r", 7).attr("fill", "darkorange"); // Highlight on hover
-      })
-      .on("mouseout", function () {
-        tooltip.style("opacity", 0);
-        d3.select(this).attr("r", 5).attr("fill", "orange"); // Reset circle
-      });
-
-    // Highlight the main date point
-    const mainDateData = chartData.find(
-      (d) => d.date.toISOString().split("T")[0] === mainDate
-    );
-    if (mainDateData) {
+    // Add hoverable points for both datasets
+    const addHoverCircles = (data, color) => {
       svg
+        .selectAll(`.data-point-${color}`)
+        .data(data)
+        .enter()
         .append("circle")
-        .attr("cx", xScale(mainDateData.date))
-        .attr("cy", yScale(mainDateData.maxTemp))
-        .attr("r", 6)
-        .attr("fill", "red");
-      svg
-        .append("circle")
-        .attr("cx", xScale(mainDateData.date))
-        .attr("cy", yScale(mainDateData.minTemp))
-        .attr("r", 6)
-        .attr("fill", "red");
-    }
+        .attr("class", `data-point-${color}`)
+        .attr("cx", (d) => xScale(d.date))
+        .attr("cy", (d) => yScale(d.maxTemp))
+        .attr("r", 5)
+        .attr("fill", color)
+        .on("mouseover", function (event, d) {
+          const [offsetX, offsetY] = d3.pointer(event);
 
-    // Add axes
-    svg
-      .append("g")
-      .attr("transform", `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y-%m-%d")));
+          tooltip
+            .style("opacity", 1)
+            .html(
+              `<strong>Date:</strong> ${d.date.toDateString()}<br>
+                     <strong>Min Temp:</strong> ${d.minTemp}°C<br>
+                     <strong>Max Temp:</strong> ${d.maxTemp}°C`
+            )
+            .style("left", `${offsetX + 10}px`)
+            .style("top", `${offsetY - 30}px`);
 
-    svg
+          d3.select(this).attr("r", 7).attr("fill", "darkorange");
+        })
+        .on("mouseout", function () {
+          tooltip.style("opacity", 0);
+          d3.select(this).attr("r", 5).attr("fill", color);
+        });
+    };
+
+    addHoverCircles(chartData, colorScale(0));
+    addHoverCircles(chartData2, colorScale(1));
+
+    // Add legend
+    const legend = svg
       .append("g")
-      .attr("transform", `translate(${margin.left},0)`)
-      .call(d3.axisLeft(yScale));
-  }, [chartData, mainDate]);
+      .attr(
+        "transform",
+        `translate(${width - margin.right - 100},${margin.top})`
+      );
+
+    legend
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", 10)
+      .attr("height", 10)
+      .attr("fill", colorScale(0));
+
+    legend
+      .append("text")
+      .attr("x", 20)
+      .attr("y", 10)
+      .text("Forecast Data")
+      .attr("alignment-baseline", "middle");
+
+    legend
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", 20)
+      .attr("width", 10)
+      .attr("height", 10)
+      .attr("fill", colorScale(1));
+
+    legend
+      .append("text")
+      .attr("x", 20)
+      .attr("y", 30)
+      .text("Training Data")
+      .attr("alignment-baseline", "middle");
+  }, [chartData, chartData2, mainDate, containerWidth]);
 
   return (
-    <div style={{ position: "relative", background: "blue" }}>
-      <svg ref={svgRef} width={600} height={400}></svg>
+    <div ref={containerRef} style={{ position: "relative", width: "100%", maxWidth: "600px", background: "white" }}>
+      <svg ref={svgRef} width={containerWidth} height={400}></svg>
       <div
         ref={tooltipRef}
         style={{ position: "absolute", opacity: 0, zIndex: "999", top: "0" }}
@@ -156,15 +237,12 @@ function ResultsChart({ chartData, mainDate }) {
   );
 }
 
-
 export default function Prediction() {
   const [city, setCity] = useState("");
   const [date, setDate] = useState(null);
   const [rainfall, setRainfall] = useState("");
   const [humidity, setHumidity] = useState("");
   const [pressure, setPressure] = useState("");
-  const [evaporation, setEvaporation] = useState("");
-  const [sunshine, setSunshine] = useState("");
   const [windspeed, setWindspeed] = useState("");
   const [uv, setUv] = useState("");
 
@@ -172,6 +250,7 @@ export default function Prediction() {
   const [predictedMaxTemp, setMaxTemp] = useState(null);
 
   const [chartData, setChartData] = useState(null);
+  const [chartData2, setChartData2] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [validationErrors, setValidationErrors] = useState({});
@@ -203,8 +282,6 @@ export default function Prediction() {
       rainfall,
       humidity,
       pressure,
-      evaporation,
-      sunshine,
       windspeed,
       uv,
     };
@@ -247,8 +324,15 @@ export default function Prediction() {
           maxTemp: value.MaxTemp,
         }));
 
+        const chartData2 = Object.entries(result.training_data).map(([key, value]) => ({
+          date: new Date(value.Date),
+          minTemp: value.MinTemp,
+          maxTemp: value.MaxTemp,
+        }));
+
         // Set state with the new chart data
         setChartData(chartData);
+        setChartData2(chartData2);
 
         // Find and highlight the main date
         const mainData = chartData.find(
@@ -294,7 +378,10 @@ export default function Prediction() {
           multiple variables simultaneously, allowing it to perform more
           efficiently compared to traditional regression models. Using Random
           Forest as the underlying model, we can achieve a model that provides
-          over 80% accuracy in daily temperature predictions.
+          over 80% accuracy in daily temperature predictions. Within the visualisation,
+          Minimum temperature is marked with a straight continuous line, where Maximum temperature
+          is visualised using a dashed line. The tooltip is available as the mouse is hovered to show
+          the detailed min and max temperature for the date.
         </Typography>
         <Paper elevation={3} sx={{ mt: 2, p: 2 }}>
           <Typography
@@ -321,12 +408,12 @@ export default function Prediction() {
                   sx={{ minWidth: "200px" }}
                   onChange={(e) => setCity(e.target.value)}
                 >
-                  <MenuItem value="Melbourne">Melbourne</MenuItem>
-                  <MenuItem value="Sydney">Sydney</MenuItem>
-                  <MenuItem value="Perth">Perth</MenuItem>
-                  <MenuItem value="Brisbane">Brisbane</MenuItem>
-                  <MenuItem value="Darwin">Darwin</MenuItem>
-                  <MenuItem value="Hobart">Hobart</MenuItem>
+                  <MenuItem value="MEL">Melbourne</MenuItem>
+                  <MenuItem value="SYD">Sydney</MenuItem>
+                  <MenuItem value="PER">Perth</MenuItem>
+                  <MenuItem value="BNE">Brisbane</MenuItem>
+                  <MenuItem value="DAR">Darwin</MenuItem>
+                  <MenuItem value="HOB">Hobart</MenuItem>
                 </TextField>
               </Container>
 
@@ -375,7 +462,7 @@ export default function Prediction() {
                   />
                 </Grid>
 
-                {/* Pressure, Evaporation, Sunshine Input */}
+                {/* Pressure, Windspeed, and  UV Input*/}
                 <Grid item xs={12} sm={3}>
                   <TextField
                     required
@@ -389,32 +476,6 @@ export default function Prediction() {
                     fullWidth
                   />
                 </Grid>
-                {/* <Grid item xs={12} sm={3}>
-                  <TextField
-                    required
-                    type="number"
-                    label="Evaporation (mm)"
-                    value={evaporation}
-                    onChange={(e) => setEvaporation(e.target.value)}
-                    error={!!validationErrors.evaporation}
-                    helperText={validationErrors.evaporation}
-                    sx={{ minWidth: "200px" }}
-                    fullWidth
-                  />
-                </Grid> */}
-                {/* <Grid item xs={12} sm={3}>
-                  <TextField
-                    required
-                    type="number"
-                    label="Sunshine (hours)"
-                    value={sunshine}
-                    onChange={(e) => setSunshine(e.target.value)}
-                    error={!!validationErrors.sunshine}
-                    helperText={validationErrors.sunshine}
-                    sx={{ minWidth: "200px" }}
-                    fullWidth
-                  />
-                </Grid> */}
 
                 <Grid item xs={12} sm={3}>
                   <TextField
@@ -429,6 +490,7 @@ export default function Prediction() {
                     fullWidth
                   />
                 </Grid>
+
                 <Grid item xs={12} sm={3}>
                   <TextField
                     required
@@ -474,6 +536,7 @@ export default function Prediction() {
               <Typography variant="h6">Temperature Prediction Chart</Typography>
               <ResultsChart
                 chartData={chartData}
+                chartData2={chartData2}
                 mainDate={date.toISOString().split("T")[0]}
               />
             </Box>

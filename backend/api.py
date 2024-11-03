@@ -7,6 +7,7 @@ from isolation_forest import train_isolation_forest, detect_anomaly
 from randomforest_classifier import load_classification_model, classify_weather
 from minmax_regression import load_minmax_model, minmax_predict
 import os
+import pandas as pd
 
 # Creating the FastAPI App
 app = FastAPI()
@@ -49,6 +50,28 @@ def get_season(date_str):
         return 'Winter'
     elif (month == 9 and day >= 1) or (month in [10, 11]):
         return 'Spring'
+
+# Helper function to read and filter data from CSV
+def get_filtered_data(file_path, target_date_str, city_code_str):
+    try:
+         # Convert target_date_str to datetime
+        target_date = datetime.strptime(target_date_str, "%Y-%m-%d")
+
+        # Load CSV file
+        df = pd.read_csv(file_path, parse_dates=['Date'])  # Assuming 'date' column exists
+
+        # Calculate date range: 4 days before and after the target date
+        start_date = target_date - timedelta(days=4)
+        end_date = target_date + timedelta(days=4)
+
+        # Filter the dataframe
+        filtered_df = df[(df['Date'] >= start_date) & (df['Date'] <= end_date) & (df['CityCode'] == city_code_str)]
+
+
+        # Convert filtered data to JSON
+        return filtered_df.to_dict(orient='records')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing data: {e}")
 
 # Load models at startup
 print("Training multi-regression model")
@@ -100,6 +123,8 @@ async def predict_minmax(req: MinMaxRequest):
         dates_range = [target_date + timedelta(days=i) for i in range(-5, 6)]
         predictions = {}
 
+        training_data = get_filtered_data('dataset/combined_weather_data.csv', req.date, req.city_code)
+
         # Loop through each date in the range specified to get regression output for each date
         for day in dates_range:
             day_str = day.strftime('%Y-%m-%d')
@@ -108,7 +133,7 @@ async def predict_minmax(req: MinMaxRequest):
             prediction = minmax_predict(day_str, req.city_code, req.rainfall, req.humidity, req.pressure, req.wind_gust_speed, req.uv_index, minmax_model)
             predictions[day_str] = prediction
 
-        return {"status": "success", "data": predictions}
+        return {"status": "success", "data": predictions, "training_data": training_data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -130,7 +130,11 @@ const Home = () => {
     variant="caption" 
     sx={{ mt: 1 }} // Add margin-top to create space between title and caption
   >
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam sagittis, quam et volutpat sollicitudin, lacus lectus blandit odio, sit amet mollis tortor nunc ac leo. Integer at varius ipsum.
+    Weather forecasting has been a crucial service that affects agriculture, transportation, and daily activities. 
+    It helps people organize their everyday activities and empower authorities to take action during extreme weather 
+    conditions by entailing atmospheric parameters such as temperature, rainfall, wind speed, humidity, pressure and UV index. 
+    Thus, decision-making depends on these forecasts being accurate. Machine Learning (ML) models have proven to be effective in 
+    enhancing the precision of weather analysis.
   </Typography>
 </Box>
     <Box sx={{ pt: 2 }}>
@@ -146,13 +150,13 @@ const Home = () => {
                 <span style={{ fontWeight: 'bold' }}>Student ID:</span> 103534612
               </Typography>
               <Typography variant="subtitle2">
-                <span style={{ fontWeight: 'bold' }}>Degree:</span> 
+                <span style={{ fontWeight: 'bold' }}>Degree:</span> BA-CS
               </Typography>
               <Typography variant="subtitle2">
-                <span style={{ fontWeight: 'bold' }}>Major:</span> 
+                <span style={{ fontWeight: 'bold' }}>Major:</span> Software Development
               </Typography>
               <Typography variant="subtitle2">
-                <span style={{ fontWeight: 'bold' }}>Task:</span> 
+                <span style={{ fontWeight: 'bold' }}>Task:</span> D3 Visualisation
               </Typography>
             </CardContent>
           </Card>
@@ -188,13 +192,13 @@ const Home = () => {
                 <span style={{ fontWeight: 'bold' }}>Student ID:</span> 104066763
               </Typography>
               <Typography variant="subtitle2">
-                <span style={{ fontWeight: 'bold' }}>Degree:</span> 
+                <span style={{ fontWeight: 'bold' }}>Degree:</span> BA-CS
               </Typography>
               <Typography variant="subtitle2">
-                <span style={{ fontWeight: 'bold' }}>Major:</span> 
+                <span style={{ fontWeight: 'bold' }}>Major:</span> Data Science
               </Typography>
               <Typography variant="subtitle2">
-                <span style={{ fontWeight: 'bold' }}>Task:</span> 
+                <span style={{ fontWeight: 'bold' }}>Task:</span> Modification of ML Models, Back-End Development, API Integrations
               </Typography>
             </CardContent>
           </Card>
@@ -259,7 +263,7 @@ return (
   <Box sx={{ p: 2, bgcolor: "#6dbcf0" }}>
     <Typography sx={{ fontWeight: 600, textAlign: "center", color: "#175383",fontSize:{xs:'0.9rem',md:'1rem'} }}>Team 8 - Innovation</Typography>
     <Typography sx={{ textAlign: 'center', marginTop: 1 ,fontSize:{xs:'0.8rem',md:'1rem'}}}>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam sagittis, quam et volutpat sollicitudin, lacus lectus blandit odio, sit amet mollis tortor nunc ac leo. Integer at varius ipsum.
+      Levin Fubex - Muy Houng Leang - Nick Enrique Wijaya
     </Typography>
     <Typography sx={{ fontSize:{xs:10,md:12}, textAlign: 'center', mt: 1, color: '#175383' }}>
       © 2024 Team 8 Innovation. All rights reserved.

@@ -182,7 +182,13 @@ export default function Classification() {
             fontSize: { xs: "0.8rem", sm: "0.9rem" },
           }}
         >
-          description here
+          Random Forest is a supervised machine learning algorithm widely used for classification tasks. 
+          It improves accuracy and reduces the likelihood of overfitting. Applied to weather classification, 
+          this model categorizes different weather conditions based on various features such as 
+          temperature, humidity, wind speed, and season. The insights gained from this classification help us understand 
+          patterns in weather conditions, which can support forecasting and decision-making for weather-dependent activities.
+          Within the visualisation, the left pie chart represents the trend of weather type for the day forecast, whereas the 
+          right pie chart depicts the overall trend of weather types for the night forecast.
         </Typography>
         <Paper elevation={3} sx={{ mt: 2, p: 2 }}>
           <Typography
