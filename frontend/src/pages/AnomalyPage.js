@@ -17,76 +17,186 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import * as d3 from "d3";
 
-const D3ScatterPlot = ({ data, mainDate }) => {
+function ResultsChart({ chartData, chartData2, mainDate }) {
   const svgRef = useRef();
+  const tooltipRef = useRef();
 
   useEffect(() => {
-    const margin = { top: 20, right: 20, bottom: 50, left: 50 };
-    const width = 600 - margin.left - margin.right;
-    const height = 400 - margin.top - margin.bottom;
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("*").remove();
 
-    const svg = d3
-      .select(svgRef.current)
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+    // Calculate width based on container size
+    const containerWidth = svgRef.current.parentNode.clientWidth;
+    const width = containerWidth > 600 ? 600 : containerWidth - 20; // Set a max width
+    const height = 400;
+    const margin = { top: 40, right: 80, bottom: 60, left: 40 };
 
+    // Chart title
+    svg
+      .append("text")
+      .attr("x", width / 2)
+      .attr("y", margin.top - 10)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "16px")
+      .attr("font-weight", "bold")
+      .text("Maximum Temperature Anomaly");
+
+    // Set up scales to cover the extent of both datasets
+    const combinedData = [...chartData, ...chartData2];
     const xScale = d3
       .scaleTime()
-      .domain(d3.extent(data, (d) => d.date))
-      .range([0, width]);
+      .domain(d3.extent(combinedData, (d) => d.date))
+      .range([margin.left, width - margin.right]);
 
     const yScale = d3
       .scaleLinear()
-      .domain([0, d3.max(data, (d) => d.score)])
+      .domain([
+        d3.min(combinedData, (d) => d.minTemp),
+        d3.max(combinedData, (d) => d.maxTemp),
+      ])
       .nice()
-      .range([height, 0]);
+      .range([height - margin.bottom, margin.top]);
+
+    const colorScale = d3.scaleOrdinal().range(["steelblue", "orange"]);
+
+    const tooltip = d3
+      .select(tooltipRef.current)
+      .style("position", "absolute")
+      .style("background", "white")
+      .style("border", "1px solid #ccc")
+      .style("padding", "5px")
+      .style("pointer-events", "none")
+      .style("opacity", 0);
+
+    const addScatterPoints = (data, color) => {
+      svg
+        .selectAll(`.data-point-${color}`)
+        .data(data)
+        .enter()
+        .append("circle")
+        .attr("class", `data-point-${color}`)
+        .attr("cx", (d) => xScale(d.date))
+        .attr("cy", (d) => yScale(d.maxTemp))
+        .attr("r", 5)
+        .attr("fill", (d) => {
+          if (d.anomaly === "Yes") return "red";
+          if (d.anomaly === "No") return "green";
+          return "steelblue";
+        })
+        .on("mouseover", function (event, d) {
+          const [offsetX, offsetY] = d3.pointer(event);
+          tooltip
+            .style("opacity", 1)
+            .html(
+              `
+              <strong>Date:</strong> ${d.date.toDateString()}<br>
+              <strong>Max Temp:</strong> ${d.maxTemp}°C<br>
+              <strong>Anomaly:</strong> ${d.anomaly}<br>
+              <strong>Anomaly Score:</strong> ${d.score}°C<br>
+               `
+            )
+            .style("left", `${offsetX + 10}px`)
+            .style("top", `${offsetY - 30}px`);
+
+          d3.select(this).attr("r", 7).attr("fill", "darkorange");
+        })
+        .on("mouseout", function () {
+          tooltip.style("opacity", 0);
+          d3.select(this)
+            .attr("r", 5)
+            .attr("fill", (d) => {
+              if (d.anomaly === "Yes") return "red";
+              if (d.anomaly === "No") return "green";
+              return "steelblue";
+            });
+        });
+    };
+
+    addScatterPoints(chartData, colorScale(0));
+    addScatterPoints(chartData2, colorScale(1));
 
     svg
       .append("g")
-      .attr("transform", `translate(0, ${height})`)
+      .attr("transform", `translate(0,${height - margin.bottom})`)
       .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y-%m-%d")))
-      .selectAll("text")
-      .attr("transform", "rotate(-45)")
-      .style("text-anchor", "end");
+      .selectAll("text")  // Select all text elements for the x-axis
+      .style("text-anchor", "end")  // Set the text anchor to the end
+      .attr("transform", "rotate(-45)")  // Rotate the text
+      .attr("dx", "-0.8em")  // Adjust the x-position
+      .attr("dy", "0.15em");  // Adjust the y-position
 
-    svg.append("g").call(d3.axisLeft(yScale));
 
     svg
-      .selectAll("circle")
-      .data(data)
-      .enter()
-      .append("circle")
-      .attr("cx", (d) => xScale(d.date))
-      .attr("cy", (d) => yScale(d.score))
-      .attr("r", (d) =>
-        d.date.toISOString().split("T")[0] === mainDate ? 6 : 4
-      )
-      .attr("fill", (d) =>
-        d.date.toISOString().split("T")[0] === mainDate ? "red" : "blue"
-      )
-      .on("mouseover", (event, d) => {
-        d3.select(event.currentTarget).attr("r", 8);
-        svg
-          .append("text")
-          .attr("x", xScale(d.date))
-          .attr("y", yScale(d.score) - 10)
-          .attr("class", "hover-text")
-          .text(
-            `Date: ${d.date.toISOString().split("T")[0]}, Score: ${d.score}`
-          );
-      })
-      .on("mouseout", (event) => {
-        d3.select(event.currentTarget).attr("r", (d) =>
-          d.date.toISOString().split("T")[0] === mainDate ? 6 : 4
-        );
-        svg.selectAll(".hover-text").remove();
-      });
-  }, [data, mainDate]);
+      .append("g")
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(yScale))
+      .append("text")
+      .attr("x", -height / 2)
+      .attr("y", -30)
+      .attr("fill", "black")
+      .attr("text-anchor", "middle")
+      .attr("transform", "rotate(-90)")
+      .text("Temperature (°C)");
 
-  return <svg ref={svgRef}></svg>;
-};
+    const legend = svg
+      .append("g")
+      .attr("transform", `translate(${width - margin.right - 130},${margin.top})`);
+
+    legend
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", 10)
+      .attr("height", 10)
+      .attr("fill", colorScale(0));
+    legend
+      .append("text")
+      .attr("x", 20)
+      .attr("y", 10)
+      .text("Training Data")
+      .attr("alignment-baseline", "middle");
+
+    legend
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", 20)
+      .attr("width", 10)
+      .attr("height", 10)
+      .attr("fill", "red");
+    legend
+      .append("text")
+      .attr("x", 20)
+      .attr("y", 30)
+      .text("Forecast Data - Anomaly")
+      .attr("alignment-baseline", "middle");
+
+    legend
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", 40)
+      .attr("width", 10)
+      .attr("height", 10)
+      .attr("fill", "green");
+    legend
+      .append("text")
+      .attr("x", 20)
+      .attr("y", 50)
+      .text("Forecast Data - Non-Anomaly")
+      .attr("alignment-baseline", "middle");
+  }, [chartData, chartData2, mainDate]);
+
+  return (
+    <div style={{ position: "relative", background: "white" }}>
+      <svg ref={svgRef} width="100%" height={500}></svg>
+      <div
+        ref={tooltipRef}
+        style={{ position: "absolute", opacity: 0, zIndex: "999", top: "0" }}
+      ></div>
+    </div>
+  );
+}
+
+
 
 export default function Anomaly() {
   const [city, setCity] = useState("");
@@ -100,6 +210,7 @@ export default function Anomaly() {
   const [uv, setUv] = useState("");
 
   const [chartData, setChartData] = useState(null);
+  const [chartData2, setChartData2] = useState(null);
   const [mainDate, setMainDate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -166,16 +277,33 @@ export default function Anomaly() {
       const result = await response.json();
 
       if (result.status === "success") {
-        const formattedData = Object.entries(result.data).map(
-          ([date, info]) => ({
-            date: new Date(date),
-            anomaly: info.anomaly,
-            score: info.score,
+        const chartData = Object.entries(result.data).map(([key, value]) => ({
+          date: new Date(value.Date),
+          maxTemp: value.MaxTemp,
+          anomaly: value.anomaly, // Include the anomaly value
+          score: value.score
+        }));
+
+        const chartData2 = Object.entries(result.training_data).map(
+          ([key, value]) => ({
+            date: new Date(value.Date),
+            minTemp: value.MinTemp,
+            maxTemp: value.MaxTemp,
           })
         );
 
-        setChartData(formattedData); // Set data for D3 chart
-        setMainDate(requestBody.date); // Store main date for highlighting
+        // Set state with the new chart data
+        setChartData(chartData);
+        setChartData2(chartData2);
+
+        // Find and highlight the main date
+        const mainData = chartData.find(
+          (d) => d.date.toISOString().split("T")[0] === requestBody.date
+        );
+        if (mainData) {
+          setMinTemp(mainData.minTemp);
+          setMaxTemp(mainData.maxTemp);
+        }
       } else {
         setError("Failed to retrieve prediction data.");
       }
@@ -212,7 +340,8 @@ export default function Anomaly() {
           for anomaly detection. This model is used to analyse and detect
           anomalous data for each weather variable. By visualising the
           anomalies, we can uncover relationships between weather variables,
-          which is useful for predicting severe weather events.
+          which is useful for predicting severe weather events. Within the visualisation, 
+          if there is an anomaly, the input data will be flagged with a different color.
         </Typography>
         <Paper elevation={3} sx={{ mt: 2, p: 2 }}>
           <Typography
@@ -380,8 +509,12 @@ export default function Anomaly() {
         </Paper>
         {chartData && (
           <Box sx={{ mt: 4 }}>
-            <Typography variant="h6">Anomaly Detection Scatter Plot</Typography>
-            <D3ScatterPlot data={chartData} mainDate={mainDate} />
+            <Typography variant="h6">Maximum Temperature Anomaly</Typography>
+            <ResultsChart
+              chartData={chartData}
+              chartData2={chartData2}
+              mainDate={date.toISOString().split("T")[0]}
+            />
           </Box>
         )}
       </Container>

@@ -23,19 +23,7 @@ export default function Classification() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [chartData, setChartData] = useState(null); // Store data for chart rendering
-
-  const handleDateChange = (value) => {
-    const minDate = new Date('2009-01-01');
-    const maxDate = new Date('2024-06-29');
-
-    if (value < minDate || value > maxDate) {
-        setError("Date must be between 2009-01-01 and 2024-06-29");
-    } else {
-        setError("");
-    }
-
-    setDate(value);
-  }
+  const [selectedForecast, setSelectedForecast] = useState(null); // To store forecast for selected date
 
   const submitForm = async (e) => {
     e.preventDefault();
@@ -70,6 +58,7 @@ export default function Classification() {
       if (result.status === "success") {
         setChartData(result.data); // Store response data for chart rendering
         createPieCharts(result.data, formattedDate);
+        setSelectedForecast(result.data[formattedDate]); // Store forecast for the selected date
       } else {
         setError("Failed to get prediction data");
       }
@@ -82,10 +71,10 @@ export default function Classification() {
   };
 
   const createPieCharts = (data, mainDate) => {
-    // Remove any previous chart SVGs
+    // Remove any previous chart SVGs and descriptions
     d3.select("#dayForecastChart").selectAll("*").remove();
     d3.select("#nightForecastChart").selectAll("*").remove();
-
+  
     // Helper function to calculate forecast counts
     const getForecastCounts = (time) => {
       const counts = {};
@@ -98,23 +87,23 @@ export default function Classification() {
         count,
       }));
     };
-
+  
     // Day and Night data for pie charts
     const dayData = getForecastCounts("day");
     const nightData = getForecastCounts("night");
-
+  
     // Dimensions and radius for pie chart
     const width = 250;
     const height = 250;
     const radius = Math.min(width, height) / 2;
-
+  
     // Create color scale
     const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
-
+  
     // Pie function and arc generator
     const pie = d3.pie().value((d) => d.count);
     const arc = d3.arc().innerRadius(0).outerRadius(radius);
-
+  
     // Tooltip setup
     const tooltip = d3
       .select("body")
@@ -125,8 +114,8 @@ export default function Classification() {
       .style("border-radius", "4px")
       .style("border", "1px solid #ccc")
       .style("display", "none");
-
-    const drawChart = (chartData, id) => {
+  
+    const drawChart = (chartData, id, description) => {
       const svg = d3
         .select(`#${id}`)
         .append("svg")
@@ -134,7 +123,8 @@ export default function Classification() {
         .attr("height", height)
         .append("g")
         .attr("transform", `translate(${width / 2}, ${height / 2})`);
-
+  
+      // Append arcs to the SVG
       svg
         .selectAll("path")
         .data(pie(chartData))
@@ -155,11 +145,33 @@ export default function Classification() {
         .attr("stroke-width", (d) =>
           d.data.forecast === data[mainDate].day_forecast ? 2 : 0
         ); // Highlight main date forecast
+  
+      // Append text labels within each arc
+      svg
+        .selectAll("text")
+        .data(pie(chartData))
+        .join("text")
+        .attr("transform", (d) => `translate(${arc.centroid(d)})`)
+        .attr("text-anchor", "middle")
+        .attr("dy", "0.35em")
+        .style("fill", "white")
+        .style("font-size", "12px")
+        .text((d) => `${d.data.forecast}: ${d.data.count}`);
+  
+      // Add description text below the chart
+      d3.select(`#${id}`)
+        .append("div")
+        .style("text-align", "center")
+        .style("margin-top", "10px")
+        .text(description);
     };
-
-    drawChart(dayData, "dayForecastChart");
-    drawChart(nightData, "nightForecastChart");
+  
+    // Draw the day and night charts with descriptions
+    drawChart(dayData, "dayForecastChart", "Day Forecast");
+    drawChart(nightData, "nightForecastChart", "Night Forecast");
   };
+  
+  
 
   return (
     <Box sx={{ m: 4 }}>
@@ -230,10 +242,8 @@ export default function Classification() {
                     <DatePicker
                       label="Date (MM/DD/YY)"
                       value={date}
-                      onChange={handleDateChange}
+                      onChange={setDate}
                       renderInput={(params) => <TextField {...params} />}
-                      minDate={new Date('2009-01-01')}
-                      maxDate={new Date('2024-06-29')}
                     />
                   </LocalizationProvider>
                 </Grid>
@@ -254,6 +264,38 @@ export default function Classification() {
             </form>
           </Container>
         </Paper>
+        {selectedForecast && (
+          <Box sx={{ mt: 4, textAlign: "center" }}>
+            <Typography variant="h6">
+              Forecast for {date ? date.toLocaleDateString() : ""}:
+            </Typography>
+            <Typography>
+              Day Forecast: {selectedForecast.day_forecast}
+            </Typography>
+            <Typography>
+              Day Reliability: {selectedForecast.day_reliability}%
+            </Typography>
+            <Typography>
+              Night Forecast: {selectedForecast.night_forecast}
+            </Typography>
+            <Typography>
+              Night Reliability: {selectedForecast.night_reliability}%
+            </Typography>
+            <Typography>
+              Min Temperature: {selectedForecast.min_temp.toFixed(2)} °C
+            </Typography>
+            <Typography>
+              Max Temperature: {selectedForecast.max_temp.toFixed(2)} °C
+            </Typography>
+            <Typography>
+              Humidity: {selectedForecast.humidity.toFixed(2)}%
+            </Typography>
+            <Typography>
+              Windspeed: {selectedForecast.windspeed.toFixed(2)} km/h
+            </Typography>
+            <Typography>UV Index: {selectedForecast.uv.toFixed(2)}</Typography>
+          </Box>
+        )}
         {/* Day and Night Forecast Charts */}
         <Box sx={{ display: "flex", justifyContent: "space-around", mt: 4 }}>
           <div id="dayForecastChart" />

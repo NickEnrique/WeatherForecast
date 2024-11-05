@@ -145,6 +145,10 @@ async def predict_anomaly(req: AnomalyRequest):
         target_date = datetime.strptime(req.date, '%Y-%m-%d')
         dates_range = [target_date + timedelta(days=i) for i in range(-5, 6)]
         anomalies = {}
+        predictions = {}
+        final_result = {}
+        # Get training data from dataset
+        training_data = get_filtered_data("dataset/combined_weather_data.csv", req.date, req.city_code)
 
         # Loop through each date in the range specified to get anomaly output for each date
         for day in dates_range:
@@ -165,8 +169,17 @@ async def predict_anomaly(req: AnomalyRequest):
 
             # Retrieving the anomaly result
             anomalies[day_str] = {"anomaly": "Yes" if anomaly['anomaly_label'] < 0 else "No", "score": anomaly['anomaly_score']}
+
+            prediction = minmax_predict(day_str, req.city_code, req.rainfall, req.humidity, req.pressure, req.wind_gust_speed, req.uv_index, minmax_model)
+            predictions[day_str] = prediction
+            final_result[day_str] = {
+                "anomaly": "Yes" if anomaly['anomaly_label'] < 0 else "No",
+                "score": anomaly['anomaly_score'],
+                "MaxTemp": prediction['MaxTemp'],
+                "Date": prediction['Date']
+            }
         
-        return {"status": "success", "data": anomalies}
+        return {"status": "success", "data": final_result, "minmax": predictions, "training_data": training_data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -206,7 +219,12 @@ async def classification_predict(req: ClassificationRequest):
                 "day_forecast": classification['day_forecast'],
                 "day_reliability": classification['day_reliability'],
                 "night_forecast": classification['night_forecast'],
-                "night_reliability": classification['night_reliability']
+                "night_reliability": classification['night_reliability'],
+                "min_temp": prediction['MinTemp'],
+                "max_temp": prediction['MaxTemp'],
+                "humidity": prediction['Humidity'],
+                "windspeed": prediction['WindGustSpeed'],
+                "uv": prediction['UVIEF'],
             }
 
         return {"status": "success", "data": classifications}

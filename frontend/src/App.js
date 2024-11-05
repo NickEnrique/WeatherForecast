@@ -108,7 +108,7 @@ const Home = () => {
     <Box
   sx={{
     backgroundImage: `url(${skyImage})`,
-    height: '30vh',
+    height: 'auto',
     backgroundSize: 'cover',
     display: 'flex',
     flexDirection: 'column', // Stack children vertically
